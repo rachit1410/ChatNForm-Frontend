@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CNF — Full Page Emerald Loader</title>
+<style>
+  :root{
+    /* Emerald palette */
+    --emerald-1: #ecfdf5;   /* very light */
+    --emerald-2: #bbf7d0;   /* light */
+    --accent-1: #10B981;    /* emerald */
+    --accent-2: #065f46;    /* deep emerald */
+    --bubble-bg: #ffffff;
+    --text-color: #064e3b;
+    --bg-anim-duration: 9s;
+    --loader-z: 9999;
+    --shadow: 0 12px 30px rgba(6,95,70,0.08);
+  }
+
+  /* Full-screen loader container */
+  html,body{
+    height: 100%;
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  /* Loader covers whole viewport so it can be dismissed later */
+  #page-loader{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--loader-z);
+    background: linear-gradient(135deg, var(--emerald-1), var(--emerald-2));
+    background-size: 300% 300%;
+    animation: bgShift var(--bg-anim-duration) ease-in-out infinite;
+    overflow: hidden;
+  }
+
+  @keyframes bgShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Soft floating "bubbles" in the background for personality */
+  .bg-bubbles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bg-bubble {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(24px);
+    opacity: 0.18;
+    transform: translate3d(0,0,0);
+    will-change: transform, opacity;
+    animation: drift linear infinite;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.02));
+  }
+  .bg-bubble.b1 { width: 420px; height: 420px; left: -8%; bottom: -12%; animation-duration: 18s; animation-delay: 0s; opacity: 0.14; }
+  .bg-bubble.b2 { width: 260px; height: 260px; right: -6%; top: -8%; animation-duration: 14s; animation-delay: 2s; opacity: 0.12; }
+  .bg-bubble.b3 { width: 180px; height: 180px; left: 10%; top: 6%; animation-duration: 20s; animation-delay: 4s; opacity: 0.10; }
+  .bg-bubble.b4 { width: 320px; height: 320px; right: 8%; bottom: 6%; animation-duration: 22s; animation-delay: 1s; opacity: 0.09; }
+
+  @keyframes drift{
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(12px, -18px, 0) scale(1.03); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  /* The chat-bubble (centerpiece) */
+  .chat-bubble {
+    position: relative;
+    z-index: 2; /* above background bubbles */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 22px;
+    border-radius: 22px;
+    background: var(--bubble-bg);
+    box-shadow: var(--shadow);
+    max-width: calc(min(84vw, 480px));
+    transform: translateY(0);
+  }
+  .chat-bubble::after {
+    /* tail - small triangle */
+    content: "";
+    position: absolute;
+    left: 20px;
+    bottom: -12px;
+    border-width: 12px 12px 0 0;
+    border-style: solid;
+    border-color: var(--bubble-bg) transparent transparent transparent;
+    filter: drop-shadow(0 6px 10px rgba(6,95,70,0.04));
+  }
+
+  /* CNF letters - gradient text */
+  .letters {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    line-height: 1;
+  }
+  .letters span {
+    display: inline-block;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    background-image: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--text-color); /* fallback */
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    animation: letterIn 360ms cubic-bezier(.2,.9,.28,1) forwards;
+    will-change: transform, opacity;
+  }
+  /* stagger entrance so it reads like typing */
+  .letters span:nth-child(1) { animation-delay: 0ms; }
+  .letters span:nth-child(2) { animation-delay: 160ms; }
+  .letters span:nth-child(3) { animation-delay: 320ms; }
+
+  @keyframes letterIn {
+    0%   { opacity: 0; transform: translateY(8px) scale(0.98); }
+    60%  { opacity: 1; transform: translateY(-6px) scale(1.06); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Typing dots - classic chat typing indicator */
+  .typing-dots {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    margin-left: 6px;
+  }
+  .typing-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    opacity: 0.9;
+    transform: translateY(0) scale(0.9);
+    animation: dotBounce 1s infinite cubic-bezier(.2,.7,.2,1);
+  }
+  .typing-dots .dot:nth-child(2) { animation-delay: 0.18s; }
+  .typing-dots .dot:nth-child(3) { animation-delay: 0.36s; }
+
+  @keyframes dotBounce {
+    0%   { transform: translateY(0) scale(0.9); opacity: 0.75; }
+    35%  { transform: translateY(-8px) scale(1.05); opacity: 1; }
+    70%  { transform: translateY(-3px) scale(1.02); opacity: 0.95; }
+    100% { transform: translateY(0) scale(0.9); opacity: 0.75; }
+  }
+
+  /* Fade-out helper (use hideLoader() to add this class) */
+  .fade-out {
+    animation: fadeOut 540ms ease forwards;
+  }
+  @keyframes fadeOut {
+    to { opacity: 0; visibility: hidden; transform: translateY(-8px); }
+  }
+
+  /* Accessibility: respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    #page-loader, .bg-bubble, .chat-bubble, .letters span, .typing-dots .dot {
+      animation: none !important;
+      transition: none !important;
+    }
+    .letters span { opacity: 1; transform: none; }
+  }
+
+  /* small screens */
+  @media (max-width:420px) {
+    .letters span { font-size: 22px; }
+    .chat-bubble { padding: 12px 16px; border-radius: 18px; }
+    .bg-bubble { filter: blur(18px); }
+  }
+</style>
+</head>
+<body>
+  <!-- PAGE LOADER -->
+  <div id="page-loader" role="status" aria-busy="true" aria-label="Loading chat">
+    <div class="bg-bubbles" aria-hidden="true">
+      <div class="bg-bubble b1"></div>
+      <div class="bg-bubble b2"></div>
+      <div class="bg-bubble b3"></div>
+      <div class="bg-bubble b4"></div>
+    </div>
+
+    <div class="chat-bubble" aria-hidden="false">
+      <div class="letters" aria-hidden="true" title="CNF">
+        <span>C</span><span>N</span><span>F</span>
+      </div>
+      <div class="typing-dots" aria-hidden="true" title="Typing">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REAL APP (hidden until loader removed) -->
+  <div id="app" hidden>
+    <!-- replace with your actual messaging app root -->
+    <main style="padding:24px">Your chat app goes here — the loader will hide when ready.</main>
+  </div>
+
+<script>
+  /**
+   * hideLoader(duration)
+   * - Adds fade-out animation and removes the loader.
+   * - Exposed globally so your app can call `hideLoader()` after data loads.
+   * - Default fade duration is ~540ms (matches CSS).
+   */
+  (function (){
+    const loader = document.getElementById('page-loader');
+    const app = document.getElementById('app');
+
+    function removeLoaderNow() {
+      if (!loader) return;
+      loader.remove();
+      if (app) app.hidden = false;
+    }
+
+    window.hideLoader = function hideLoader(delayMs = 0) {
+      // allow optional small delay (e.g., let UI settle)
+      setTimeout(() => {
+        if (!loader) return;
+        loader.classList.add('fade-out');
+        // wait for CSS animation to finish before removing
+        const animationTime = 560; // slightly longer than CSS fadeOut
+        setTimeout(removeLoaderNow, animationTime);
+      }, 0 + (delayMs || 0));
+    };
+
+    // Demo: auto-hide after 2 seconds (remove this in production)
+    window.addEventListener('DOMContentLoaded', function () {
+      // only run demo auto-hide if you don't call hideLoader yourself
+      setTimeout(() => {
+        if (typeof window.__USE_EXTERNAL_LOADER === 'undefined') {
+          window.hideLoader();
+        }
+      }, 2000);
+    });
+
+    // Optional: expose showLoader if you need to re-show it (simple)
+    window.showLoader = function showLoader() {
+      if (!loader) return;
+      document.body.appendChild(loader);
+      if (app) app.hidden = true;
+      loader.classList.remove('fade-out');
+    };
+  })();
+</script>
+</body>
+</html>

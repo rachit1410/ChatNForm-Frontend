@@ -1,0 +1,159 @@
+:root {
+  --emerald-1: #ecfdf5;
+  --emerald-2: #bbf7d0;
+  --accent-1: #10B981;
+  --accent-2: #065f46;
+  --bubble-bg: #ffffff;
+  --text-color: #064e3b;
+  --bg-anim-duration: 9s;
+  --shadow: 0 12px 30px rgba(6,95,70,0.08);
+}
+
+.loader-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--emerald-1), var(--emerald-2));
+  background-size: 300% 300%;
+  animation: bgShift var(--bg-anim-duration) ease-in-out infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 12px; /* Optional, for neat container edges */
+}
+
+@keyframes bgShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating bubbles */
+.bg-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.bg-bubble {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(24px);
+  opacity: 0.18;
+  animation: drift linear infinite;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.02));
+  will-change: transform, opacity;
+}
+
+.bg-bubble.b1 { width: 420px; height: 420px; left: -8%; bottom: -12%; animation-duration: 18s; animation-delay: 0s; opacity: 0.14; }
+.bg-bubble.b2 { width: 260px; height: 260px; right: -6%; top: -8%; animation-duration: 14s; animation-delay: 2s; opacity: 0.12; }
+.bg-bubble.b3 { width: 180px; height: 180px; left: 10%; top: 6%; animation-duration: 20s; animation-delay: 4s; opacity: 0.10; }
+.bg-bubble.b4 { width: 320px; height: 320px; right: 8%; bottom: 6%; animation-duration: 22s; animation-delay: 1s; opacity: 0.09; }
+
+@keyframes drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(12px, -18px, 0) scale(1.03); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* Chat bubble */
+.chat-bubble {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border-radius: 22px;
+  background: var(--bubble-bg);
+  box-shadow: var(--shadow);
+  max-width: 320px;
+  transform: translateY(0);
+  user-select: none;
+}
+
+.chat-bubble::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  bottom: -12px;
+  border-width: 12px 12px 0 0;
+  border-style: solid;
+  border-color: var(--bubble-bg) transparent transparent transparent;
+  filter: drop-shadow(0 6px 10px rgba(6,95,70,0.04));
+}
+
+/* CNF Letters */
+.letters {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  line-height: 1;
+}
+
+.letters span {
+  display: inline-block;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  background-image: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--text-color);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  animation: letterIn 360ms cubic-bezier(.2,.9,.28,1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Stagger letter animation */
+.letters span:nth-child(1) { animation-delay: 0ms; }
+.letters span:nth-child(2) { animation-delay: 160ms; }
+.letters span:nth-child(3) { animation-delay: 320ms; }
+
+@keyframes letterIn {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.98); }
+  60%  { opacity: 1; transform: translateY(-6px) scale(1.06); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Typing dots */
+.typing-dots {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  margin-left: 6px;
+}
+
+.typing-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  opacity: 0.9;
+  transform: translateY(0) scale(0.9);
+  animation: dotBounce 1s infinite cubic-bezier(.2,.7,.2,1);
+}
+
+.typing-dots .dot:nth-child(2) { animation-delay: 0.18s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes dotBounce {
+  0%   { transform: translateY(0) scale(0.9); opacity: 0.75; }
+  35%  { transform: translateY(-8px) scale(1.05); opacity: 1; }
+  70%  { transform: translateY(-3px) scale(1.02); opacity: 0.95; }
+  100% { transform: translateY(0) scale(0.9); opacity: 0.75; }
+}
+
+/* Accessibility: reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .loader-container, .bg-bubble, .chat-bubble, .letters span, .typing-dots .dot {
+    animation: none !important;
+    transition: none !important;
+  }
+  .letters span { opacity: 1; transform: none; }
+}

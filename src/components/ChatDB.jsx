@@ -4,6 +4,7 @@ import { getChatList } from '../features/chat/chatServices'
 import { useDispatch, useSelector } from 'react-redux';
 import ChatMain from './ChatMain';
 import AddGroup from './AddGroup';
+import { disconnectFromChat } from '../features/websocket/websocketServices';
 
 // Main App Component
 function ChatDB() {
@@ -20,6 +21,7 @@ function ChatDB() {
   const chatGroups = useSelector((state) => state.chat.chatGroups)
 
   const handleChatSelect = (chat) => {
+    dispatch(disconnectFromChat())
     setSelectedChat(chat);
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);

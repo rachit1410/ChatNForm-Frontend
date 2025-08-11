@@ -12,20 +12,61 @@ const api = axios.create({
   withCredentials: true,
 });
 
-let csrfToken = null; // Store CSRF token here
 
 // Function to fetch CSRF token
-export const fetchCsrfToken = async () => {
+let csrfTokenCache = null;
+let csrfTokenPromise = null;
+
+// Function to fetch CSRF token (now with caching logic)
+export const fetchCsrfToken = async () => {  
+  // 1. Check if token is already in cache
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+  
+// 2. Check if a request is already in-flight
+if (csrfTokenPromise) {
+  return csrfTokenPromise;
+}
+
+// 3. No token and no in-flight request, so create a new promise
+csrfTokenPromise = new Promise(async (resolve, reject) => {
   try {
     const response = await axios.get(`${baseURL}/get-csrf-token`, {
       withCredentials: true,
     });
-    csrfToken = response.data.csrfToken;
-    return csrfToken;
+    
+    const contentType = response.headers['content-type'];
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('Error: Expected JSON response, but received non-JSON:', contentType);
+      // Clean up the promise on failure
+      csrfTokenPromise = null;
+      resolve(null);
+      return;
+    }
+
+    if (response.data && typeof response.data === 'object' && typeof response.data.csrfToken === 'string') {
+      // 4. Cache the token and resolve the promise
+      csrfTokenCache = response.data.csrfToken;
+      // Clean up the promise on success
+      csrfTokenPromise = null;
+      resolve(csrfTokenCache);
+    } else {
+      console.error('Error: CSRF token not found or invalid format in response data.', response.data);
+      // Clean up the promise on failure
+      csrfTokenPromise = null;
+      resolve(null);
+    }
+  
   } catch (error) {
-    console.error('Error fetching CSRF token:', error);
-    throw error;
-  }
+      console.error('Error fetching CSRF token (network or request issue):', error.message || error);
+      // Clean up the promise on failure
+      csrfTokenPromise = null;
+      resolve(null);
+    }
+  });
+
+  return csrfTokenPromise;
 };
 
 // Export a function that takes the store as an argument
@@ -33,6 +74,7 @@ export const setupInterceptors = (store) => {
   // Request interceptor: attach access token AND CSRF token if available
   api.interceptors.request.use(
     (config) => {
+      const csrfToken = fetchCsrfToken(baseURL)
       const state = store.getState();
       const accessToken = state.auth.accessToken;
 

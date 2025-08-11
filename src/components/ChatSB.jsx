@@ -5,7 +5,7 @@ const ChatSB = function ({ chats = [], selectedChat = "", handleChatSelect }) {
     function formatTime(isoString) {
         if (!isoString) return "";
         const date =  new Date(isoString);
-        return date.toUTCString()
+        return `${date.getDate()}/${date.getMonth()}/ ${date.getFullYear()}`
     }
 
     return (

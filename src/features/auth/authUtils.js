@@ -99,3 +99,71 @@ export const fetchUser = createAsyncThunk('auth/fetchUser',
         }
     }
 );
+
+export const updateAccount = createAsyncThunk('auth/update',
+    async ({name, profile}, { rejectWithValue }) => {
+
+        const formData = new FormData();
+        if (name) {
+            formData.append('name', name)
+        }
+        if (profile && profile instanceof File) {
+            formData.append('profile_image', profile)
+        }
+        try {
+            const response = await authService.updateAccount(formData);
+            if (response.data.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.data.message);
+            }
+        } catch (error) {
+            return rejectWithValue(error.response.data.message);
+        }
+    }
+);
+
+export const forgotPassword = createAsyncThunk('auth/forgotPassword',
+    async (email, { rejectWithValue }) => {
+        try {
+            const response = await authService.forgotPassword(email);
+            if (response.data.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.data.message);
+            }
+        } catch (error) {
+            return rejectWithValue(error.response.data.message);
+        }
+    }
+);
+
+export const verifyOtpCp = createAsyncThunk('auth/verifyOtpCp',
+    async ({ email, otp }, { rejectWithValue }) => {
+        try {
+            const response = await authService.verifyOtpCp(email, otp);
+            if (response.data.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.data.message);
+            }
+        } catch (error) {
+            return rejectWithValue(error.response.data.message);
+        }
+    }
+);
+
+export const changePassword = createAsyncThunk('auth/changePassword',
+    async ({ email, new_password }, { rejectWithValue }) => {
+        try {
+            const response = await authService.changePassword({ email, new_password });
+            if (response.data.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.data.message);
+            }
+        } catch (error) {
+            return rejectWithValue(error.response.data.message);
+        }
+    }
+);

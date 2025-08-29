@@ -31,8 +31,6 @@ const chatReducer = (state = initialState, action) => {
       return { ...state, currentGroupId: action.payload.groupId };
     case clearChatMessages().type:
       return { ...state, messages: [] };
-    case 'DYNAMIC_REFRESH':
-      return { ...state }
     case redirectToLogin().type:
       return { ...state, shouldRedirectToLogin: true };
     case resetRedirect().type:

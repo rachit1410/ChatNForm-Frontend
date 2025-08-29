@@ -16,40 +16,62 @@ const Login = () => {
   const renderErrorMessages = (errorObj) => {
     if (!errorObj) return null;
 
-    if (typeof errorObj === 'object' && errorObj.hasOwnProperty('message')) {
-      console.log('Error Object:', errorObj);
-
-      return <p className="text-red-500 text-sm mt-2">{errorObj.message}</p>;
+    // If it's just a plain string
+    if (typeof errorObj === "string") {
+      return <p className="text-red-400 text-sm mt-2">{errorObj}</p>;
     }
 
-    if (typeof errorObj === 'object' && Object.keys(errorObj).length > 0) {
+    // If it has a .message property
+    if (
+      typeof errorObj === "object" &&
+      errorObj !== null &&
+      "message" in errorObj
+    ) {
+      // If message is a string → render directly
+      if (typeof errorObj.message === "string") {
+        return <p className="text-red-400 text-sm mt-2">{errorObj.message}</p>;
+      }
+
+      // If message is an object → treat it like DRF serializer errors
+      if (typeof errorObj.message === "object" && errorObj.message !== null) {
+        return (
+          <ul className="text-red-400 text-sm mt-2 list-disc list-inside">
+            {Object.entries(errorObj.message).map(([field, messages]) => (
+              <li key={field}>
+                <strong>{field}:</strong>{" "}
+                {Array.isArray(messages)
+                  ? messages.join("; ")
+                  : String(messages)}
+              </li>
+            ))}
+          </ul>
+        );
+      }
+    }
+
+    // If it's a DRF serializer error directly
+    if (
+      typeof errorObj === "object" &&
+      errorObj !== null &&
+      Object.keys(errorObj).length > 0
+    ) {
       return (
-        <ul className="text-red-500 text-sm mt-2 list-disc list-inside">
+        <ul className="text-red-400 text-sm mt-2 list-disc list-inside">
           {Object.entries(errorObj).map(([field, messages]) => (
             <li key={field}>
-              <strong>{field}:</strong>{' '}
-              {Array.isArray(messages) ? (
-                messages.map((msg, index) => (
-                  <span key={index}>
-                    {msg}
-                    {index < messages.length - 1 && '; '}
-                  </span>
-                ))
-              ) : (
-                <span>{messages}</span>
-              )}
+              <strong>{field}:</strong>{" "}
+              {Array.isArray(messages)
+                ? messages.join("; ")
+                : String(messages)}
             </li>
           ))}
         </ul>
       );
     }
 
-    if (typeof errorObj === 'string') {
-      return <p className="text-red-500 text-sm mt-2">{errorObj}</p>;
-    }
-
     return null;
   };
+
 
   const validateEmail = (email) => {
     // Basic email validation regex
@@ -90,54 +112,65 @@ const Login = () => {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Login</h2>
+    // Changed main background to a dark gray
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 bg-[url('/bg-dark.svg')] p-4">
+      {/* Changed card background to a slightly lighter dark gray */}
+      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-sm">
+        {/* Changed heading text color */}
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">Login</h2>
 
         {error && renderErrorMessages(error)}
 
         <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+          {/* Changed label text color */}
+          <label htmlFor="email" className="block text-gray-300 text-sm font-bold mb-2">
             Email
           </label>
+          {/* Changed input background and text color, updated placeholder color */}
           <input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 placeholder-gray-400"
           />
-          {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
+          {emailError && <p className="text-red-400 text-sm mt-1">{emailError}</p>}
         </div>
 
         <div className="mb-6">
-          <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+          {/* Changed label text color */}
+          <label htmlFor="password" className="block text-gray-300 text-sm font-bold mb-2">
             Password
           </label>
+          {/* Changed input background and text color, updated placeholder color */}
           <input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-white mb-3 leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 placeholder-gray-400"
           />
-          {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
+          {passwordError && <p className="text-red-400 text-sm mt-1">{passwordError}</p>}
+          <p className="text-gray-400 no-underline text-sm mt-4 hover:text-blue-400 cursor-pointer" onClick={() => navigate('/account/change-password')}>Forgot your password?</p>
         </div>
+        
 
+        {/* Changed button colors for dark mode */}
         <button
           onClick={handleLogin}
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full
-                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        <p className="mt-4 text-center text-gray-600 text-sm">
+        {/* Changed link text and color */}
+        <p className="mt-4 text-center text-gray-400 text-sm">
           Don't have an account?{' '}
-          <a href="/register" className="text-blue-500 hover:text-blue-700 font-bold">
+          <a href="/register" className="text-blue-400 hover:text-blue-500 font-bold">
             Register
           </a>
         </p>

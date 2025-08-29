@@ -1,5 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { createChatGroup, getChatList, getChatMessages, addMemberToGroup, getMembersList} from "./chatServices";
+import {
+  createChatGroup,
+  getChatList,
+  getChatMessages,
+  addMemberToGroup,
+  getMembersList,
+  getGroup,
+  deleteMessage,
+  getJoinRequests,
+  sendJoinRequest,
+  deleteJoinRequest,
+  deleteMember,
+  uploadFile,
+  clearAllMessages
+} from "./chatServices";
 
 const initialState = {
   chatGroups: [],
@@ -9,10 +23,17 @@ const initialState = {
   membersList: {},
   addGroup: false,
   newGroup: {
-    name: '',
+    name: "",
     members: [],
-    type: 'private'
-  }
+    type: "private",
+    description: "",
+  },
+  updatedGroup: null,
+  selectedChat: null,
+  isGroupSettingOpen: false,
+  chatGroup: null,
+  joinRequests: null,
+  fileUrl: null
 };
 
 const chatSlice = createSlice({
@@ -27,16 +48,38 @@ const chatSlice = createSlice({
       state.membersList = {};
       state.addGroup = false;
       state.newGroup = {
-        name: '',
+        name: "",
         members: [],
-        type: 'private'
+        type: "private",
+        description: "",
       };
+      state.selectedChat = null;
+      state.isGroupSettingOpen = false;
+      state.updatedGroup = null;
+      state.chatGroup = null;
+      state.joinRequests = null;
+      state.fileUrl = null;
+    },
+    setUpdatedGroup: (state, action) => {
+      state.updatedGroup = action.payload;
+    },
+    clearUpdatedGroup: (state) => {
+      state.updatedGroup = null;
+    },
+    toggleIsGroupSettingOpen: (state) => {
+      state.isGroupSettingOpen = !state.isGroupSettingOpen;
     },
     toggleAddGroup: (state) => {
       state.addGroup = !state.addGroup;
     },
+    setSelectedChat: (state, action) => {
+      state.selectedChat = action.payload;
+    },
     setNewGroupName: (state, action) => {
       state.newGroup.name = action.payload;
+    },
+    setNewGroupDescription: (state, action) => {
+      state.newGroup.description = action.payload;
     },
     setNewGroupType: (state, action) => {
       state.newGroup.type = action.payload;
@@ -45,12 +88,14 @@ const chatSlice = createSlice({
       state.newGroup.members.push(action.payload);
     },
     removeMemberFromNewGroup: (state, action) => {
-      state.newGroup.members = state.newGroup.members.filter(member => member.id !== action.payload.id);
+      state.newGroup.members = state.newGroup.members.filter(
+        (member) => member.id !== action.payload.id
+      );
     },
     clearNewGroup: (state) => {
       state.newGroup = {
         profile: null,
-        name: '',
+        name: "",
         members: [],
       };
     },
@@ -63,9 +108,21 @@ const chatSlice = createSlice({
       })
       .addCase(createChatGroup.fulfilled, (state, action) => {
         state.loading = false;
-        state.chatGroups.push(action.payload);
+        state.chatGroups.push(action.payload.data);
       })
       .addCase(createChatGroup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(getGroup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getGroup.fulfilled, (state, action) => {
+        state.loading = false;
+        state.chatGroup = action.payload.data;
+      })
+      .addCase(getGroup.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -111,12 +168,101 @@ const chatSlice = createSlice({
       })
       .addCase(addMemberToGroup.fulfilled, (state, action) => {
         state.loading = false;
-        const { groupId, memberId } = action.payload;
-        if (state.chatGroups[groupId]) {
-          state.chatGroups[groupId].members.push(memberId);
-        }
+        state.error = null;
+        state.membersList.members.push(action.payload.data);
       })
       .addCase(addMemberToGroup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteMessage.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMessage.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(deleteMessage.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(getJoinRequests.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.joinRequests = null;
+      })
+      .addCase(getJoinRequests.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.joinRequests = action.payload.data
+      })
+      .addCase(getJoinRequests.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(sendJoinRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(sendJoinRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(sendJoinRequest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteJoinRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteJoinRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.joinRequests = (state.joinRequests.filter((req) => req.uid !== action.payload.data.requestId))
+      })
+      .addCase(deleteJoinRequest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteMember.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMember.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.membersList.members = (state.membersList.members.filter((member) => member.uid !== action.payload.data.memberId))
+      })
+      .addCase(deleteMember.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(uploadFile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.fileUrl = null;
+      })
+      .addCase(uploadFile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.fileUrl = action.payload.data.file_url;
+      })
+      .addCase(uploadFile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(clearAllMessages.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(clearAllMessages.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.chatMessages = [];
+      })
+      .addCase(clearAllMessages.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
@@ -124,4 +270,15 @@ const chatSlice = createSlice({
 });
 
 export default chatSlice.reducer;
-export const { clearChatState, toggleAddGroup, setNewGroupName, addMemberToNewGroup, clearNewGroup, removeMemberFromNewGroup, setNewGroupType } = chatSlice.actions;
+export const {
+  clearChatState,
+  toggleAddGroup,
+  setNewGroupName,
+  addMemberToNewGroup,
+  clearNewGroup,
+  removeMemberFromNewGroup,
+  setNewGroupType,
+  setSelectedChat,
+  setNewGroupDescription,
+  toggleIsGroupSettingOpen,
+} = chatSlice.actions;

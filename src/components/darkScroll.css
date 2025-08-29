@@ -1,0 +1,27 @@
+/* In your global CSS file, e.g., globals.css */
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px; /* Set the width of the scrollbar */
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937; /* Dark gray for the track */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #4b5563; /* Lighter gray for the thumb */
+  border-radius: 4px; /* Rounded corners for the thumb */
+  border: 2px solid #1f2937; /* Creates a small gap around the thumb */
+}

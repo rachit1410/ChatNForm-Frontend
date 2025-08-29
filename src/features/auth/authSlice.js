@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import {login, register, verifyOtp, sendOtp, logout, fetchUser} from './authUtils';
+import {login, register, verifyOtp, sendOtp, logout, fetchUser, refreshToken, updateAccount, forgotPassword, verifyOtpCp, changePassword} from './authUtils';
 
 const initialState = {
   accessToken: null,
@@ -9,7 +9,8 @@ const initialState = {
   error: null,
   loading: false,
   isRegistered: false,
-  isAuthenticated: false
+  isAuthenticated: false,
+  isOtpCorrect: false
 };
 
 const authSlice = createSlice({
@@ -24,6 +25,9 @@ const authSlice = createSlice({
     },
     setError: (state, action) => {
       state.error = action.payload
+    },
+    setLoadState: (state, action) => {
+      state.loading = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -107,10 +111,68 @@ const authSlice = createSlice({
           state.loading = false;
           state.error = action.payload || 'Failed to fetch user data';
           state.isAuthenticated = false;
+        })
+        .addCase(refreshToken.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(refreshToken.fulfilled, (state, action) => {
+            state.accessToken = action.payload.data.access;
+            state.loading = false;
+        })
+        .addCase(refreshToken.rejected, (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
+        })
+        .addCase(updateAccount.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(updateAccount.fulfilled, (state, action) => {
+            state.user = action.payload.data;
+            state.loading = false;
+        })
+        .addCase(updateAccount.rejected, (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
+        })
+        .addCase(forgotPassword.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(forgotPassword.fulfilled, (state, action) => {
+            state.loading = false;
+        })
+        .addCase(forgotPassword.rejected, (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
+        })
+        .addCase(verifyOtpCp.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+            state.isOtpCorrect = false;
+        })
+        .addCase(verifyOtpCp.fulfilled, (state, action) => {
+            state.loading = false;
+            state.isOtpCorrect = true;
+        })
+        .addCase(verifyOtpCp.rejected, (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
+        })
+        .addCase(changePassword.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(changePassword.fulfilled, (state, action) => {
+            state.loading = false;
+        })
+        .addCase(changePassword.rejected, (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
         });
-
   },
 });
 
-export const { setAccess, clearAuth, setError } = authSlice.actions;
+export const { setAccess, clearAuth, setError, setLoadState } = authSlice.actions;
 export default authSlice.reducer;

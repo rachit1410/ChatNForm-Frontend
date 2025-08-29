@@ -10,4 +10,15 @@ export const searchApiCalls = {
       throw error;
     }
   },
+  searchGroup: async (query) => {
+    try {
+      const response = await api.get(`/search/group/?g=${query}`);
+        return response.data;
+    } catch (error) {
+      console.error("Error searching for group:", error);
+      throw error;
+    }
+  }
 };
+
+

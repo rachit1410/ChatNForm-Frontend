@@ -1,88 +1,143 @@
-import { useDispatch, useSelector } from "react-redux"; // Import useDispatch
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authUtils";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaComments, FaTasks, FaUserPlus, FaSignInAlt, FaSignOutAlt } from 'react-icons/fa';
 
+// Helper component for rendering different types of error messages
+const renderErrorMessages = (errorObj) => {
+  if (!errorObj) return null;
+
+  if (typeof errorObj === "string") {
+    return <p className="text-red-400 text-sm mt-2">{errorObj}</p>;
+  }
+
+  if (typeof errorObj === "object" && errorObj !== null) {
+    // Handling API error messages with a nested 'message' object
+    const messages = errorObj.message || errorObj;
+    if (typeof messages === "object" && messages !== null) {
+      return (
+        <ul className="text-red-400 text-sm mt-2 list-disc list-inside">
+          {Object.entries(messages).map(([field, msgs]) => (
+            <li key={field}>
+              <strong>{field}:</strong> {Array.isArray(msgs) ? msgs.join("; ") : String(msgs)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    // Handling simple string messages
+    return <p className="text-red-400 text-sm mt-2">{messages}</p>;
+  }
+  return null;
+};
+
+// Main Home component
 function Home() {
-  const dispatch = useDispatch(); // Initialize useDispatch hook
-  const navigate = useNavigate()
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isAuthenticated, error } = useSelector(state => state.auth);
+  const [dots, setDots] = useState(1);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setDots(prevDots => (prevDots % 3) + 1);
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleNavigateToDashboard = () => {
-    navigate("/dashboard")
-  }
+    navigate("/dashboard");
+  };
 
   const handleLogout = () => {
     dispatch(logout());
   };
 
-  const [dots, setDots] = useState(1)
-
-  useEffect(() => {
-    // Set up the interval
-    const intervalId = setInterval(() => {
-      // Use the functional update form of setDots to ensure you're always
-      // working with the latest 'dots' state value.
-      setDots(prevDots => {
-        // If prevDots is 3 (meaning we have '...'), reset to 0 (for '')
-        // Otherwise, increment prevDots
-        return prevDots === 3 ? 0 : prevDots + 1;
-      });
-    }, 1000); // Update every 1000ms (1 second)
-
-    // Clear the interval when the component unmounts or the effect re-runs
-    return () => clearInterval(intervalId);
-  }, []); // Empty dependency array ensures this effect runs only once on mount
-
-  // Function to render the dots based on the 'dots' state
-  const renderDots = () => {
-    return '•'.repeat(dots);
-  };
+  const renderDots = () => '.'.repeat(dots);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white p-4">
-      <div className="bg-white p-8 rounded-xl shadow-2xl text-center max-w-lg w-full transform transition-transform duration-500 hover:scale-105">
-        <h1 className="text-6xl font-extrabold text-gray-900 mb-6 animate-fade-in">
-          Welcome Home!
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4 font-sans">
+      
+      {/* Hero Section */}
+      <div className="text-center max-w-4xl mx-auto py-20 px-6">
+        <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight mb-4 animate-fade-in-down">
+          Chat, Collaborate, and Conquer Forms.
         </h1>
-        <p className="text-gray-700 text-lg mb-8">
-          This is Home Page. Website in development {renderDots()}
+        <p className="text-xl md:text-2xl text-gray-400 mb-8">
+          Streamline your team's communication and data collection with our all-in-one platform.
         </p>
-
-        {/* Conditionally render the Logout button if authenticated */}
-        {isAuthenticated ? (
-          <>
-            <button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
-          >
-            Logout
-          </button>
-          <button
-            onClick={handleNavigateToDashboard}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mx-2 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
-          >
-            Dashboard
-          </button>
-          </>
-        ) : (
-          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <a
-              href="/login" // Assuming you have a /login route
-              className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
-            >
-              Login
-            </a>
-            <a
-              href="/register" // Assuming you have a /register route
-              className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75"
-            >
-              Register
-            </a>
-          </div>
-        )}
-        { error && <div className="text-red-400 text-center p-2 text-3xl" >{error}</div> }
+        
+        {/* Call-to-Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-10">
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={handleNavigateToDashboard}
+                className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
+              >
+                <FaComments className="mr-2" /> Go to Dashboard
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
+              >
+                <FaSignOutAlt className="mr-2" /> Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <a
+                href="/register"
+                className="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
+              >
+                <FaUserPlus className="mr-2" /> Get Started
+              </a>
+              <a
+                href="/login"
+                className="flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
+              >
+                <FaSignInAlt className="mr-2" /> Login
+              </a>
+            </>
+          )}
+        </div>
+        
+        {/* Development Status Indicator */}
+        <div className="mt-4 text-sm text-gray-500">
+          Website in development {renderDots()}
+        </div>
       </div>
+
+      {/* Optional: Add a features section */}
+      <div className="w-full bg-gray-800 py-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-10 text-white">Why Choose Our App?</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-gray-700 p-8 rounded-2xl shadow-xl transform transition-transform duration-300 hover:scale-105">
+              <FaComments className="text-emerald-400 text-5xl mb-4 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-2 text-white">Real-time Chat</h3>
+              <p className="text-gray-300">
+                Keep your team connected with instant messaging, file sharing, and dedicated channels for every project.
+              </p>
+            </div>
+            <div className="bg-gray-700 p-8 rounded-2xl shadow-xl transform transition-transform duration-300 hover:scale-105">
+              <FaTasks className="text-red-400 text-5xl mb-4 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-2 text-white">Powerful Forms</h3>
+              <p className="text-gray-300">
+                Create custom forms to collect data, manage surveys, and automate your workflows effortlessly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Error Message Display */}
+      {error && (
+        <div className="mt-8 p-4 bg-red-900 bg-opacity-50 rounded-lg max-w-md w-full text-center shadow-lg">
+          {renderErrorMessages(error)}
+        </div>
+      )}
     </div>
   );
 }

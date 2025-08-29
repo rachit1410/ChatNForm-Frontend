@@ -34,36 +34,65 @@ const Register = () => {
   };
 
   // Helper function to render error messages (reused from previous interactions)
-  const renderErrorMessages = (errorObj) => {
-    if (!errorObj) return null;
+const renderErrorMessages = (errorObj) => {
+  if (!errorObj) return null;
 
-    if (typeof errorObj === 'string') {
-      return <p className="text-red-500 text-sm mt-2">{errorObj}</p>;
+  // If it's just a plain string
+  if (typeof errorObj === "string") {
+    return <p className="text-red-400 text-sm mt-2">{errorObj}</p>;
+  }
+
+  // If it has a .message property
+  if (
+    typeof errorObj === "object" &&
+    errorObj !== null &&
+    "message" in errorObj
+  ) {
+    // If message is a string → render directly
+    if (typeof errorObj.message === "string") {
+      return <p className="text-red-400 text-sm mt-2">{errorObj.message}</p>;
     }
 
-    if (typeof errorObj === 'object' && Object.keys(errorObj).length > 0) {
+    // If message is an object → treat it like DRF serializer errors
+    if (typeof errorObj.message === "object" && errorObj.message !== null) {
       return (
-        <ul className="text-red-500 text-sm mt-2 list-disc list-inside">
-          {Object.entries(errorObj).map(([field, messages]) => (
+        <ul className="text-red-400 text-sm mt-2 list-disc list-inside">
+          {Object.entries(errorObj.message).map(([field, messages]) => (
             <li key={field}>
-              <strong>{field}:</strong>{' '}
-              {Array.isArray(messages) ? (
-                messages.map((msg, index) => (
-                  <span key={index}>
-                    {msg}
-                    {index < messages.length - 1 && '; '}
-                  </span>
-                ))
-              ) : (
-                <span>{messages}</span>
-              )}
+              <strong>{field}:</strong>{" "}
+              {Array.isArray(messages)
+                ? messages.join("; ")
+                : String(messages)}
             </li>
           ))}
         </ul>
       );
     }
-    return null;
-  };
+  }
+
+  // If it's a DRF serializer error directly
+  if (
+    typeof errorObj === "object" &&
+    errorObj !== null &&
+    Object.keys(errorObj).length > 0
+  ) {
+    return (
+      <ul className="text-red-400 text-sm mt-2 list-disc list-inside">
+        {Object.entries(errorObj).map(([field, messages]) => (
+          <li key={field}>
+            <strong>{field}:</strong>{" "}
+            {Array.isArray(messages)
+              ? messages.join("; ")
+              : String(messages)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return null;
+};
+
 
   // Redirect to login page if registration is successful
   if (isRegistered) {
@@ -71,15 +100,15 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Register</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 bg-[url('/bg-dark.svg')] p-4">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-sm">
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">Register</h2>
 
         {/* Render all error messages */}
         {error && renderErrorMessages(error)}
 
         <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+          <label htmlFor="email" className="block text-gray-300 text-sm font-bold mb-2">
             Email
           </label>
           <input
@@ -89,14 +118,14 @@ const Register = () => {
             disabled={emailVerified}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 placeholder-gray-400"
           />
         </div>
 
         {!emailVerified && (
           <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full
-                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full
+                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             disabled={loading}
             onClick={handleSendOtp}
           >
@@ -104,7 +133,7 @@ const Register = () => {
           </button>
         )}
         {emailVerified && (
-          <p className="text-green-500 text-center mt-4 mb-4">
+          <p className="text-green-400 text-center mt-4 mb-4">
             ✔ Email Verified! Please complete registration.
           </p>
         )}
@@ -112,7 +141,7 @@ const Register = () => {
         {emailVerified && (
           <>
             <div className="mb-4">
-              <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
+              <label htmlFor="name" className="block text-gray-300 text-sm font-bold mb-2">
                 Full Name
               </label>
               <input
@@ -121,11 +150,11 @@ const Register = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your full name"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 placeholder-gray-400"
               />
             </div>
             <div className="mb-6">
-              <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+              <label htmlFor="password" className="block text-gray-300 text-sm font-bold mb-2">
                 Password
               </label>
               <input
@@ -134,12 +163,12 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Choose a password"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 placeholder-gray-400"
               />
             </div>
             <button
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full
-                         disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               disabled={loading}
               onClick={handleRegister}
             >
@@ -158,9 +187,9 @@ const Register = () => {
         )}
 
         {/* Optional: Link to login page */}
-        <p className="mt-4 text-center text-gray-600 text-sm">
+        <p className="mt-4 text-center text-gray-400 text-sm">
           Already have an account?{' '}
-          <a href="/login" className="text-blue-500 hover:text-blue-700 font-bold">
+          <a href="/login" className="text-blue-400 hover:text-blue-500 font-bold">
             Login
           </a>
         </p>

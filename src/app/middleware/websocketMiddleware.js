@@ -1,34 +1,34 @@
-import { ws } from '../../webSocket/ws';
+import { ws } from "../../webSocket/ws";
 import {
   wsConnected,
-  wsDisconnected,
   wsMessageReceived,
   wsError,
   redirectToLogin,
   setLoading,
-  dynamicRefresh
-} from '../../features/websocket/websocketServices';
-import { WebsocketEvent, Websocket } from 'websocket-ts';
+} from "../../features/websocket/websocketServices";
+import { refreshToken } from "../../features/auth/authUtils";
+import { WebsocketEvent, Websocket } from "websocket-ts";
 
 const playSound = () => {
-  const audio = new Audio('/message-recived.mp3');
-  audio.play().catch(err => console.error('Audio play failed:', err));
+  const audio = new Audio("/bright-notification-352449.mp3");
+  audio.play().catch((err) => console.error("Audio play failed:", err));
 };
 
 const createWebSocketMiddleware = () => {
   let socket = null;
   let tokenRefreshTimeoutId = null;
+  let refreshing = false;
 
-  // Decode JWT to get expiry
+  // Decode JWT
   function parseJwt(token) {
     try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const jsonPayload = decodeURIComponent(
         atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
       );
       return JSON.parse(jsonPayload);
     } catch {
@@ -36,69 +36,87 @@ const createWebSocketMiddleware = () => {
     }
   }
 
-  // Calculate ms until expiry minus 30 seconds buffer
+  // Calculate ms until expiry (30s buffer)
   function msUntilExpiry(token) {
-  const payload = parseJwt(token);
-  if (!payload || !payload.exp) {
-    console.log("Invalid token or missing exp");
-    return 0;
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) {
+      console.log("Invalid token or missing exp");
+      return 0;
+    }
+    const expiryTimeMs = payload.exp * 1000;
+    const now = Date.now();
+    return Math.max(expiryTimeMs - now - 30000, 0);
   }
-  const expiryTimeMs = payload.exp * 1000;
-  const now = Date.now();
-  const waitTime = Math.max(expiryTimeMs - now - 30000, 0);
-  console.log("Token expires in (ms):", waitTime);
-  return waitTime;
-}
 
-function scheduleTokenRefresh(store) {
-  if (tokenRefreshTimeoutId) {
-    clearTimeout(tokenRefreshTimeoutId);
-    tokenRefreshTimeoutId = null;
-  }
-  const accessToken = store.getState().auth.accessToken;
-  if (!accessToken) {
-    console.log("No access token, skipping refresh schedule");
-    return;
-  }
-  const waitTime = msUntilExpiry(accessToken);
-  console.log("Scheduling token refresh in ms:", waitTime);
-  if (waitTime <= 0) {
-    console.log("Token expired or close to expiry, refreshing immediately");
-    refreshToken(store);
-  } else {
-    tokenRefreshTimeoutId = setTimeout(() => refreshToken(store), waitTime);
-  }
-}
+  function scheduleTokenRefresh(store) {
+    if (tokenRefreshTimeoutId) {
+      clearTimeout(tokenRefreshTimeoutId);
+      tokenRefreshTimeoutId = null;
+    }
+    const accessToken = store.getState().auth.accessToken;
+    if (!accessToken) return;
 
-let refreshing = false;
+    const waitTime = msUntilExpiry(accessToken);
+    if (waitTime <= 0) {
+      refreshMyToken(store);
+    } else {
+      tokenRefreshTimeoutId = setTimeout(() => refreshMyToken(store), waitTime);
+    }
+  }
 
-  // Refresh token by dispatching dynamicRefresh and reschedule watcher
-async function refreshToken(store) {
-  if (refreshing) return; // skip if already refreshing
-  try {
+  async function refreshMyToken(store) {
+    if (refreshing) return;
     refreshing = true;
-    await store.dispatch(dynamicRefresh());
-    scheduleTokenRefresh(store);
-  } catch (err) {
-    console.error('Failed to refresh token:', err);
-  } finally {
-    refreshing = false;
-  }
-}
+    try {
+      console.log("🔄 Refreshing token...");
+      await store.dispatch(refreshToken()).unwrap(); // ensure Redux updated
 
-  return store => next => async action => {
-    switch (action.type) {
-      case 'WS_CONNECT_CHAT':
-        if (socket !== null) {
+      const state = store.getState();
+      const newToken = state.auth.accessToken;
+      const currentGroupId = state.chat?.selectedChat?.uid;
+
+      if (socket && currentGroupId && newToken) {
+        console.log("🔁 Reconnecting WS with new token");
+        try {
           socket.close();
+        } catch (err) {
+          console.warn("Error closing old socket:", err);
+        }
+        store.dispatch({
+          type: "WS_CONNECT_CHAT",
+          payload: { groupId: currentGroupId },
+        });
+      }
+
+      scheduleTokenRefresh(store);
+    } catch (err) {
+      console.error("❌ Failed to refresh token:", err);
+      store.dispatch(redirectToLogin());
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  return (store) => (next) => async (action) => {
+    switch (action.type) {
+      case "WS_CONNECT_CHAT": {
+        if (socket !== null) {
+          try {
+            // 🧹 Remove old listeners
+            socket.removeEventListener(WebsocketEvent.open, () => {});
+            socket.removeEventListener(WebsocketEvent.message, () => {});
+            socket.underlyingWebsocket?.removeEventListener("close", () => {});
+            socket.removeEventListener("error", () => {});
+
+            socket.close();
+          } catch (err) {
+            console.warn("Error cleaning old socket:", err);
+          }
           socket = null;
         }
 
         const { groupId } = action.payload;
-
-        if (!groupId) {
-          return next(action);
-        }
+        if (!groupId) return next(action);
 
         const state = store.getState();
         const accessToken = state.auth.accessToken;
@@ -109,74 +127,87 @@ async function refreshToken(store) {
           return next(action);
         }
 
-        // Start token watcher on connect
+        // Start token watcher
         scheduleTokenRefresh(store);
-        store.dispatch(setLoading(true))
-        
-        socket = await ws(groupId, accessToken); // Await the WebSocket instance
+        store.dispatch(setLoading(true));
 
-        socket.addEventListener(WebsocketEvent.open, (i = Websocket, ev = MessageEvent) => {
-          console.log('connection open.');
+        socket = await ws(groupId, accessToken);
+
+        socket.addEventListener(WebsocketEvent.open, () => {
+          console.log("✅ WS connection open");
           store.dispatch(wsConnected());
-          store.dispatch(setLoading(false))
+          store.dispatch(setLoading(false));
         });
 
-        socket.addEventListener(WebsocketEvent.message, (i = Websocket, ev = MessageEvent) => {
-          try {
-            console.log('message received.');
-            const data = JSON.parse(ev.data);
-            if (data.message.message && data.message.sender_id !== user.id) {
-              store.dispatch(wsMessageReceived(data.message));
-              playSound();
+        socket.addEventListener(
+          WebsocketEvent.message,
+          (i = Websocket, ev = MessageEvent) => {
+            try {
+              const data = JSON.parse(ev.data);
+              console.log("data received : ", data);
+              
+              if (data.type && data.sender_id !== user.id) {
+                store.dispatch(wsMessageReceived(data));
+                playSound();
+              }
+            } catch (error) {
+              store.dispatch(
+                wsError(`Failed to parse message: ${error.message}`)
+              );
             }
-          } catch (error) {
-            store.dispatch(wsError(`Failed to parse message: ${error.message}`));
+          }
+        );
+
+        socket.underlyingWebsocket.addEventListener("close", (ev) => {
+          console.warn("⚠️ WS closed:", ev.code, ev.reason);
+
+          if ([4001, 4003, 4401, 401, 403].includes(ev.code) && !refreshing) {
+            refreshMyToken(store);
           }
         });
 
-        socket.addEventListener(WebsocketEvent.close, () => {
-          store.dispatch(wsDisconnected());
-          socket = null;
-
-          // Clear token watcher on disconnect
-          if (tokenRefreshTimeoutId) {
-            clearTimeout(tokenRefreshTimeoutId);
-            tokenRefreshTimeoutId = null;
-          }
+        socket.addEventListener("error", (event) => {
+          store.dispatch(wsError("WebSocket connection error"));
         });
 
-        socket.addEventListener('error', async event => {
-          console.error('WebSocket error observed:', event);
-          store.dispatch(wsError('WebSocket connection error'));
-          await refreshToken(store);
-        });
         break;
+      }
 
-      case 'WS_DISCONNECT_CHAT':
+      case "WS_DISCONNECT_CHAT": {
         if (socket !== null) {
           socket.close();
           socket = null;
         } else {
-          console.warn('[Middleware] Attempted to disconnect, but no WebSocket connection was active.');
+          console.warn(
+            "[Middleware] Attempted to disconnect, but no WebSocket connection was active."
+          );
         }
 
-        // Clear token watcher on manual disconnect
         if (tokenRefreshTimeoutId) {
           clearTimeout(tokenRefreshTimeoutId);
           tokenRefreshTimeoutId = null;
         }
         break;
+      }
 
-      case 'WS_SEND_MESSAGE':
-        if (socket && socket.underlyingWebsocket && socket.underlyingWebsocket.readyState === WebSocket.OPEN) {
+      case "WS_SEND_MESSAGE": {
+        if (
+          socket &&
+          socket.underlyingWebsocket &&
+          socket.underlyingWebsocket.readyState === WebSocket.OPEN
+        ) {
           socket.send(JSON.stringify(action.payload));
         } else {
-          console.warn('[Middleware] WebSocket not open. Message not sent:', action.payload);
+          console.warn(
+            "[Middleware] WebSocket not open. Message not sent:",
+            action.payload
+          );
         }
         break;
+      }
 
       default:
-        return next(action);
+        break;
     }
 
     return next(action);

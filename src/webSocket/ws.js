@@ -8,15 +8,9 @@ import {
 export const ws = async function(groupId, accessToken) {
     const baseUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8000/ws';
     const url = `${baseUrl}/chat/${groupId}/?token=${accessToken}`;
-
-    let socketInstance = null;
     try {
-        if (socketInstance){
-            socketInstance = null;
-        };
-
         // This ensures the third argument is correctly interpreted as the options object.
-        socketInstance = new WebsocketBuilder(url)
+        const socketInstance = new WebsocketBuilder(url)
             .withBuffer(new ArrayQueue())           // buffer messages when disconnected
             .withBackoff(new ConstantBackoff(1000)) // retry every 1s
             .build();

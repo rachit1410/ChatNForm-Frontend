@@ -55,22 +55,6 @@ export const clearChatMessages = ()=>({
   type: 'CLEAR_CHAT_MESSSAGES'
 });
 
-export const dynamicRefresh = () => async (dispatch) => {
-  try {
-    const response = await api.get(`${import.meta.env.VITE_API_URL}/chat/custom-refresh/`); 
-    // backend should send a new access token in response
-    if (response.data.status) {
-      dispatch({ type: 'DYNAMIC_REFRESH' });
-    }
-    else{
-      throw new Error("something went wrong!")
-    }
-  } catch (error) {
-    console.error('Token refresh failed', error);
-    dispatch(redirectToLogin());
-  }
-};
-
 export const setLoading = (loading) => ({
   type: 'SET_LOADING',
   payload: {loading }

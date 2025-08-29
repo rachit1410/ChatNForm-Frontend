@@ -7,6 +7,7 @@ import { store, persistor } from './app/store.js'
 import { fetchCsrfToken, setupInterceptors } from './api/axios.js'
 import { PersistGate } from 'redux-persist/integration/react'
 
+
 setupInterceptors(store);
 fetchCsrfToken();
 

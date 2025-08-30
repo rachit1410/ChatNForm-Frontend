@@ -1,4 +1,4 @@
-const AnimatedButton = ({ onClick, icon: Icon, label, color = "red" }) => {
+const AnimatedButton = ({ onClick, icon: Icon, label, color }) => {
   return (
     <button
       onClick={onClick}
@@ -6,7 +6,7 @@ const AnimatedButton = ({ onClick, icon: Icon, label, color = "red" }) => {
         group relative flex items-center justify-center overflow-hidden
         w-10 hover:w-24 h-10
         rounded-full transition-all duration-300
-        bg-${color}-100 text-${color}-600 hover:bg-${color}-200
+        ${color ? `bg-${color}-200 text-${color}-700 hover:bg-${color}-300` : `text-gray-100`}
       `}
     >
       {/* Icon stays centered, then nudges slightly left */}

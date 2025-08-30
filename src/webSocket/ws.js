@@ -1,18 +1,20 @@
 // src/webSocket/ws.js
 import {
   ArrayQueue,
-  ConstantBackoff,
   WebsocketBuilder,
 } from "websocket-ts"; // Correct default import
 
 export const ws = async function(groupId, accessToken) {
     const baseUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8000/ws';
-    const url = `${baseUrl}/chat/${groupId}/?token=${accessToken}`;
+    // encode path/query parts to avoid malformed handshake URLs
+    const encGroupId = encodeURIComponent(String(groupId));
+    const encToken = encodeURIComponent(String(accessToken));
+    const url = `${baseUrl}/chat/${encGroupId}/?token=${encToken}`;
+    console.debug("[ws.js] connecting to", url);
     try {
         // This ensures the third argument is correctly interpreted as the options object.
         const socketInstance = new WebsocketBuilder(url)
             .withBuffer(new ArrayQueue())           // buffer messages when disconnected
-            .withBackoff(new ConstantBackoff(1000)) // retry every 1s
             .build();
 
         return socketInstance;

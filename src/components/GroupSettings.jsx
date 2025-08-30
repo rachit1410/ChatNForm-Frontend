@@ -8,6 +8,7 @@ import {
   UserMinus,
   UserPlus,
   LogOut,
+  Camera
 } from "lucide-react";
 import {
   toggleIsGroupSettingOpen,
@@ -238,7 +239,6 @@ const GroupSettings = () => {
           onClick={() => dispatch(toggleIsGroupSettingOpen(false))}
           icon={ArrowLeft}
           label="Back"
-          color="gray"
         />
 
         {/* Title always absolute center */}
@@ -252,6 +252,7 @@ const GroupSettings = () => {
             onClick={handleClearMessages}
             icon={X}
             label="Clear"
+            color="red"
           />
 
           {isOwner ? (
@@ -259,12 +260,14 @@ const GroupSettings = () => {
               onClick={handleDeleteGroup}
               icon={Trash2}
               label="Delete"
+              color="red"
             />
           ) : (
             <AnimatedButton
               onClick={handleExitGroup}
               icon={LogOut}
               label="Exit"
+              color="red"
             />
           )}
         </div>
@@ -290,7 +293,7 @@ const GroupSettings = () => {
           </div>
           {isAdmin && (
             <label className="absolute inset-0 m-auto flex w-32 h-32 cursor-pointer items-center justify-center rounded-full backdrop-blur-sm bg-black/30 text-white opacity-0 transition-all duration-300 transform scale-0 group-hover:opacity-100 group-hover:scale-100 shadow-lg">
-              <UserPlus className="w-8 h-8 text-white transition-all duration-300" />
+              <Camera className="w-8 h-8 text-white transition-all duration-300" />
               <input
                 type="file"
                 className="hidden"

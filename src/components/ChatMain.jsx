@@ -24,6 +24,7 @@ import GroupSettings from "./GroupSettings";
 import { urlHelper } from "../utilities/utils";
 import { v4 as uuidv4 } from "uuid";
 import api from "../api/axios";
+import MessageInput from './MessageInput';
 
 
 function timeAgo(dateString) {
@@ -261,7 +262,7 @@ const ChatMain = function ({ setIsSidebarOpen }) {
 
     // Only scroll to bottom on first load or when user is near bottom
     if (isNearBottom) {
-      lastMsg.scrollIntoView({ behavior: "smooth", block: "end" });
+      lastMsg.scrollIntoView({ behavior: "auto", block: "end" });
     }
   }, [messages, newMessages]);
 
@@ -272,6 +273,15 @@ const ChatMain = function ({ setIsSidebarOpen }) {
       setFile(selected);
     }
   };
+
+  const handleCloseChat = () => {
+    dispatch(disconnectFromChat());
+    dispatch(setSelectedChat(null));
+    setMessages([]);
+    setFile(null);
+    dispatch(clearChatMessages());
+    dispatch(getMembersList(null));
+  }
 
   /**
    * Removes the selected file from the state.
@@ -302,10 +312,10 @@ const ChatMain = function ({ setIsSidebarOpen }) {
         <div className="flex items-center space-x-4 animate-slideInFromLeft">
           {/* Back button for mobile view */}
           <button
-            className="md:hidden text-gray-400 focus:outline-none hover:text-emerald-500 transition-colors"
+            className="text-gray-400 focus:outline-none hover:text-emerald-500 transition-colors"
             onClick={() => {
               setIsSidebarOpen(true);
-              dispatch(setSelectedChat(null));
+              handleCloseChat();
             }}
           >
             <StepBack className="w-6 h-6" />
@@ -563,60 +573,15 @@ const ChatMain = function ({ setIsSidebarOpen }) {
 
       {/* Fixed Input Bar */}
       {canMessage ? (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 bg-gray-900 flex items-center h-[72px] z-10">
-          {/* Hidden file input */}
-          <input
-            type="file"
-            id="fileInput"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          {/* File input label with icon */}
-          <label htmlFor="fileInput" className="cursor-pointer mr-3">
-            <Paperclip className="w-5 h-5 text-gray-400" />
-          </label>
-          {/* Message text input */}
-          <input
-            type="text"
-            placeholder="Type a message"
-            className="flex-1 px-4 py-2 rounded-full bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-gray-50 placeholder-gray-400"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSendMessage();
-            }}
-          />
-          {/* File preview */}
-          {file && (
-            <div className="relative flex items-center border rounded p-1 ml-2 border-gray-600">
-              {file.type.startsWith("image/") ? (
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt="preview"
-                  className="w-12 h-12 object-cover rounded"
-                />
-              ) : (
-                <span className="text-sm text-gray-50">{file.name}</span>
-              )}
-              <button
-                onClick={removeFile}
-                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          )}
-
-          {/* Send message button */}
-          <button
-            className={`p-2 rounded-2xl shadow-md bg-emerald-500 hover:bg-emerald-600  
-                   text-white transition-colors flex items-center ml-2 justify-center
-                   disabled:opacity-50 disabled:cursor-not-allowed`}
-            onClick={handleSendMessage}
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </div>
+        <MessageInput
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSendMessage={handleSendMessage}
+          disabled={!canMessage}
+          handleFileChange={handleFileChange}
+          file={file}
+          removeFile={removeFile}
+        />
       ) : (
         // UI for read-only groups
         <div className="absolute flex flex-col items-center justify-center bottom-0 right-0 left-0 p-4 border-t-2 border-red-500 z-10 bg-gray-800 shadow-lg">

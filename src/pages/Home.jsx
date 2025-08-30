@@ -54,10 +54,8 @@ function Home() {
     dispatch(logout());
   };
 
-  const renderDots = () => '.'.repeat(dots);
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4 font-sans">
+    <div className="flex flex-col items-center justify-center bg-gray-900 text-white p-4 font-sans min-w-full overflow-hidden min-h-screen fixed">
       
       {/* Hero Section */}
       <div className="text-center max-w-4xl mx-auto py-20 px-6">
@@ -104,8 +102,8 @@ function Home() {
         </div>
         
         {/* Development Status Indicator */}
-        <div className="mt-4 text-sm text-gray-500">
-          Website in development {renderDots()}
+        <div className="mt-4 text-lg text-gray-500">
+          A personal project by <span className="font-semibold text-red-700">Rachit</span>
         </div>
       </div>
 

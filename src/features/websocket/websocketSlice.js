@@ -14,7 +14,7 @@ const initialState = {
   isConnected: false,
   error: null,
   currentGroupId: null,
-  loading: false,
+  loading: false
 };
 
 const chatReducer = (state = initialState, action) => {

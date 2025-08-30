@@ -31,7 +31,7 @@ export const createChatGroup = createAsyncThunk(
 
 export const updateChatGroup = createAsyncThunk(
   "chat/updateGroup",
-  async ({ uid, profile, description, type }, { rejectWithValue }) => {
+  async ({ uid, description, profile, type }, { rejectWithValue }) => {
    try {
      const formData = new FormData();
      formData.append('uid', uid);

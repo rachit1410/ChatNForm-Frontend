@@ -1,4 +1,3 @@
-import api from "../../api/axios"
 
 // Action to initiate WebSocket connection to a chat group
 export const connectToChat = (groupId) => ({

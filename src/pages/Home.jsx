@@ -37,14 +37,6 @@ function Home() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, error } = useSelector(state => state.auth);
-  const [dots, setDots] = useState(1);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setDots(prevDots => (prevDots % 3) + 1);
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
 
   const handleNavigateToDashboard = () => {
     navigate("/dashboard");
@@ -103,7 +95,7 @@ function Home() {
         
         {/* Development Status Indicator */}
         <div className="mt-4 text-lg text-gray-500">
-          A personal project by <span className="font-semibold text-red-700">Rachit</span>
+          A project by <span className="font-semibold text-red-700">Rachit</span>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 // src/api/axios.js
 import axios from 'axios';
-import { setAccess, clearAuth } from '../features/auth/authSlice';
+import { clearAuth, setAccessExpiry } from '../features/auth/authSlice';
 
 const baseURL = import.meta.env.VITE_API_URL;
 
@@ -108,7 +108,7 @@ export const setupInterceptors = (store) => {
         try {
           // Attempt to refresh the token using the dedicated endpoint
           // This request should typically rely on the httpOnly refresh token cookie
-          const res = await axios.get(`${baseURL}/auth/jwt/`, {
+          const res = await axios.get(`${baseURL}/auth/refresh/`, {
             withCredentials: true,
           });
 
@@ -117,14 +117,10 @@ export const setupInterceptors = (store) => {
             store.dispatch(clearAuth()); // Clear authentication state
             return Promise.reject(new Error('Token refresh failed'));
           }
-
-          const newAccess = res.data.data.access;
+          const accessExpiry = res.data.data.accessExpiry;
 
           // Update Redux store with the new access token
-          store.dispatch(setAccess(newAccess));
-
-          // Update the Authorization header for the original request with the new token
-          originalRequest.headers['Authorization'] = `Bearer ${newAccess}`;
+          store.dispatch(setAccessExpiry(accessExpiry));
 
           // Retry the original failed request with the new access token
           return api(originalRequest);

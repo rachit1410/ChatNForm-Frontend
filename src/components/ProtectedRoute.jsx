@@ -12,7 +12,7 @@ const ProtectedRoute = function ({ children }) {
     dispatch(setLoadState(false));
     dispatch(setError(null));
   }, [dispatch]);
-  const { user, isAuthenticated, loading, accessToken, error } = useSelector(
+  const { user, isAuthenticated, loading, accessExpiry, error } = useSelector(
     (state) => state.auth
   );
 
@@ -74,10 +74,10 @@ const ProtectedRoute = function ({ children }) {
   };
 
   useEffect(() => {
-    if (accessToken && !user && !loading && !error) {
+    if (accessExpiry && !user && !loading && !error) {
       dispatch(fetchUser());
     }
-  }, [accessToken, user, loading, error, isAuthenticated, dispatch]);
+  }, [accessExpiry, user, loading, error, isAuthenticated, dispatch]);
 
   if (error && isAuthenticated === false && !user) {
     const errorMessage = renderErrorMessages(error);

@@ -167,3 +167,18 @@ export const changePassword = createAsyncThunk('auth/changePassword',
         }
     }
 );
+
+export const getWSToken = createAsyncThunk('auth/wsToken',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await authService.getWSToken();
+            if (response.data.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.data.message);
+            }
+        } catch (error) {
+            return rejectWithValue(error.response.data.message);
+        }
+    }
+);

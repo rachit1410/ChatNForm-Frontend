@@ -17,7 +17,7 @@ const authService = {
     return await api.post("/auth/jwt/", { email, password });
   },
   async refreshToken() {
-    return await api.get("/auth/jwt");
+    return await api.post("/auth/refresh/");
   },
   async logout() {
     return await api.delete("/auth/jwt/");
@@ -44,6 +44,9 @@ const authService = {
   },
   async changePassword({ email, new_password }) {
     return await api.post("/auth/change-password/", { email, new_password });
+  },
+  async getWSToken() {
+    return await api.get("/auth/ws-token/");
   }
 };
 

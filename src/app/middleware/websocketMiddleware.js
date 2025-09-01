@@ -32,31 +32,13 @@ const createWebSocketMiddleware = () => {
     return Math.min(30000, 500 * 2 ** attempt);
   };
 
-  // Decode JWT
-  function parseJwt(token) {
-    try {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      return JSON.parse(jsonPayload);
-    } catch {
-      return null;
-    }
-  }
-
   // Calculate ms until expiry (30s buffer)
-  function msUntilExpiry(token) {
-    const payload = parseJwt(token);
-    if (!payload || !payload.exp) {
-      console.log("Invalid token or missing exp");
+  function msUntilExpiry(expiry) {
+    if (!expiry) {
+      console.log("Invalid expiry");
       return 0;
     }
-    const expiryTimeMs = payload.exp * 1000;
+    const expiryTimeMs = expiry * 1000;
     const now = Date.now();
     return Math.max(expiryTimeMs - now - 30000, 0);
   }
@@ -66,10 +48,9 @@ const createWebSocketMiddleware = () => {
       clearTimeout(tokenRefreshTimeoutId);
       tokenRefreshTimeoutId = null;
     }
-    const accessToken = store.getState().auth.accessToken;
-    if (!accessToken) return;
-    const waitTime = msUntilExpiry(accessToken);
-    console.log("[Middleware] scheduleTokenRefresh: waitTime =", waitTime);
+    const accessExpiry = store.getState().auth.accessExpiry;
+    if (!accessExpiry) return;
+    const waitTime = msUntilExpiry(accessExpiry);
     if (waitTime <= 0) {
       console.log(
         "[Middleware] Token has expired or is near expiry – refreshing now."
@@ -77,9 +58,6 @@ const createWebSocketMiddleware = () => {
       refreshMyToken(store);
     } else {
       tokenRefreshTimeoutId = setTimeout(() => {
-        console.log(
-          "[Middleware] Token refresh timeout hit, refreshing token."
-        );
         refreshMyToken(store);
       }, waitTime);
     }
@@ -92,10 +70,10 @@ const createWebSocketMiddleware = () => {
     try {
       await store.dispatch(refreshToken()).unwrap();
       const state = store.getState();
-      const newToken = state.auth.accessToken;
+      const newExpiry = state.auth.accessExpiry;
       const currentGroupId = state.chat?.selectedChat?.uid;
-      console.log("[Middleware] Token refreshed. New token:", newToken);
-      if (socket && currentGroupId && newToken) {
+      console.log("[Middleware] Token refreshed. New expiry:", newExpiry);
+      if (socket && currentGroupId && newExpiry) {
         console.log("[Middleware] 🔁 Reconnecting WS with new token");
         try {
           manualClose = false;
@@ -157,21 +135,15 @@ const createWebSocketMiddleware = () => {
           }
           socket = null;
         }
-
         const state = store.getState();
-        const accessToken = state.auth.accessToken;
         const user = state.auth.user;
-        if (!accessToken) {
-          store.dispatch(redirectToLogin());
-          return next(action);
-        }
-
+        
         // Start token watcher
         scheduleTokenRefresh(store);
         store.dispatch(setLoading(true));
 
         connecting = true;
-        socket = await ws(groupId, accessToken);
+        socket = await ws(groupId);
 
         if (!socket) {
           store.dispatch(wsError("Failed to create WebSocket instance"));

@@ -1,8 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import {login, register, verifyOtp, sendOtp, logout, fetchUser, refreshToken, updateAccount, forgotPassword, verifyOtpCp, changePassword} from './authUtils';
+import {login, register, verifyOtp, sendOtp, logout, fetchUser, refreshToken, updateAccount, forgotPassword, verifyOtpCp, changePassword, getWSToken} from './authUtils';
+
 
 const initialState = {
-  accessToken: null,
+  accessExpiry: null,
   emailVerified: false,
   email: null,
   user: null,
@@ -10,16 +11,14 @@ const initialState = {
   loading: false,
   isRegistered: false,
   isAuthenticated: false,
-  isOtpCorrect: false
+  isOtpCorrect: false,
+  token: null,
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setAccess: (state, action) => {
-      state.accessToken = action.payload;
-    },
     clearAuth: (state) => {
       Object.assign(state, initialState);
     },
@@ -28,7 +27,10 @@ const authSlice = createSlice({
     },
     setLoadState: (state, action) => {
       state.loading = action.payload;
-    }
+    },
+    setAccessExpiry: (state, action) => {
+      state.accessExpiry = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -80,9 +82,10 @@ const authSlice = createSlice({
           state.error = null;
         })
         .addCase(login.fulfilled, (state, action) => {
-          state.accessToken = action.payload.data.access;
+          state.accessExpiry = action.payload.data.accessExpiry;
           state.loading = false;
           state.isAuthenticated = true;
+          state.emailVerified = true;
         })
         .addCase(login.rejected, (state, action) => {
           state.loading = false;
@@ -105,7 +108,7 @@ const authSlice = createSlice({
         .addCase(fetchUser.fulfilled, (state, action) => {
           state.user = action.payload.data.user;
           state.loading = false;
-          state.isAuthenticated = true;
+          state.isAuthenticated = true
         })
         .addCase(fetchUser.rejected, (state, action) => {
           state.loading = false;
@@ -121,6 +124,18 @@ const authSlice = createSlice({
             state.loading = false;
         })
         .addCase(refreshToken.rejected, (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
+        })
+        .addCase(getWSToken.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(getWSToken.fulfilled, (state, action) => {
+            state.token = action.payload.data.token;
+            state.loading = false;
+        })
+        .addCase(getWSToken.rejected, (state, action) => {
             state.error = action.payload;
             state.loading = false;
         })
@@ -174,5 +189,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setAccess, clearAuth, setError, setLoadState } = authSlice.actions;
+export const { clearAuth, setError, setLoadState, setAccessExpiry } = authSlice.actions;
 export default authSlice.reducer;

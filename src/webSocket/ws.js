@@ -3,13 +3,18 @@ import {
   ArrayQueue,
   WebsocketBuilder,
 } from "websocket-ts"; // Correct default import
+import api from "../api/axios";
 
-export const ws = async function(groupId, accessToken) {
+export const ws = async function(groupId) {
     const baseUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8000/ws';
     // encode path/query parts to avoid malformed handshake URLs
+
+    const res = await api.get("/auth/ws-token/");
+    const token = res.data.data.token;
+
     const encGroupId = encodeURIComponent(String(groupId));
-    const encToken = encodeURIComponent(String(accessToken));
-    const url = `${baseUrl}/chat/${encGroupId}/?token=${encToken}`;
+    const encToken = encodeURIComponent(String(token)); 
+    const url = `${baseUrl}/chat/?group=${encGroupId}&token=${encToken}`;
     console.debug("[ws.js] connecting to", url);
     try {
         // This ensures the third argument is correctly interpreted as the options object.

@@ -1,5 +1,5 @@
-import './darkScroll.css'
-import { Paperclip, Send, Settings, StepBack, X } from "lucide-react";
+import "./darkScroll.css";
+import { Paperclip, Settings, StepBack, X, ArrowBigDown } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -24,8 +24,7 @@ import GroupSettings from "./GroupSettings";
 import { urlHelper } from "../utilities/utils";
 import { v4 as uuidv4 } from "uuid";
 import api from "../api/axios";
-import MessageInput from './MessageInput';
-
+import MessageInput from "./MessageInput";
 
 function timeAgo(dateString) {
   const now = new Date();
@@ -140,7 +139,8 @@ const ChatMain = function ({ setIsSidebarOpen }) {
     {
       getName: (message_type) =>
         message_type === "file" ? "Download" : "Copy",
-      style: "hover:text-emerald-500 hover:bg-emerald-200 dark:hover:bg-emerald-800 dark:hover:text-white",
+      style:
+        "hover:text-emerald-500 hover:bg-emerald-200 dark:hover:bg-emerald-800 dark:hover:text-white",
       action: async (msg) => {
         // Action to download a file or copy text to clipboard
         if (msg.message_type === "file" && msg.file_message) {
@@ -168,7 +168,8 @@ const ChatMain = function ({ setIsSidebarOpen }) {
     },
     {
       getName: (message_type) => "Delete",
-      style: "hover:text-red-500 hover:bg-red-200 dark:hover:bg-red-800 dark:hover:text-white",
+      style:
+        "hover:text-red-500 hover:bg-red-200 dark:hover:bg-red-800 dark:hover:text-white",
       action: (msg) => {
         // Action to delete a message after user confirmation
         const canDelete = window.confirm(
@@ -231,7 +232,7 @@ const ChatMain = function ({ setIsSidebarOpen }) {
       dispatch(sendMessage(newMsg));
       dispatch(
         wsMessageReceived({
-          id: uuidv4(),
+          id: newMsg.id,
           group_id: selectedChat?.uid,
           type: newMsg.message_type,
           file: newMsg.file_url,
@@ -251,6 +252,37 @@ const ChatMain = function ({ setIsSidebarOpen }) {
    * Effect to auto-scroll to the last message when new messages are added.
    * It only scrolls if the user is already near the bottom of the chat.
    */
+
+  const [showScrollToBottomButton, setShowScrollToBottomButton] =
+    useState(false);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+
+  const handleChatBodyScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+    // If scrolling up and not near the bottom, show the button
+    if (scrollTop < lastScrollTop && !nearBottom) {
+      setShowScrollToBottomButton(true);
+    }
+
+    // If near the bottom, hide the button
+    if (nearBottom) {
+      setShowScrollToBottomButton(false);
+    }
+
+    setLastScrollTop(scrollTop);
+  };
+
+  const handleScrollToBottom = () => {
+    const chatBody = chatBodyRef.current;
+    const lastMsg = lastMessageRef.current;
+    if (!chatBody || !lastMsg) return;
+
+    // Scroll to the bottom (the last message)
+    lastMsg.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+
   useEffect(() => {
     const chatBody = chatBodyRef.current;
     const lastMsg = lastMessageRef.current;
@@ -262,10 +294,9 @@ const ChatMain = function ({ setIsSidebarOpen }) {
 
     // Only scroll to bottom on first load or when user is near bottom
     if (isNearBottom) {
-      lastMsg.scrollIntoView({ behavior: "auto", block: "end" });
+      lastMsg.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [messages, newMessages]);
-
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
@@ -281,7 +312,7 @@ const ChatMain = function ({ setIsSidebarOpen }) {
     setFile(null);
     dispatch(clearChatMessages());
     dispatch(getMembersList(null));
-  }
+  };
 
   /**
    * Removes the selected file from the state.
@@ -325,7 +356,9 @@ const ChatMain = function ({ setIsSidebarOpen }) {
             <img
               src={
                 selectedChat?.group_profile && selectedChat?.group_profile.image
-                  ? `${urlHelper.getBaseUrl()}${selectedChat?.group_profile.image}`
+                  ? `${urlHelper.getBaseUrl()}${
+                      selectedChat?.group_profile.image
+                    }`
                   : `https://placehold.co/40x40/FF5733/FFFFFF?text=${encodeURIComponent(
                       selectedChat?.group_name?.[0] ?? "G"
                     )}`
@@ -362,6 +395,7 @@ const ChatMain = function ({ setIsSidebarOpen }) {
         id="chat-body"
         ref={chatBodyRef}
         className="absolute top-[76px] bottom-[72px] left-6 right-6 overflow-y-auto p-6 bg-gray-900 bg-cover bg-center  hide-scrollbar"
+        onScroll={handleChatBodyScroll}
       >
         {/* Render existing messages */}
         {messages.map((msg) => {
@@ -391,7 +425,7 @@ const ChatMain = function ({ setIsSidebarOpen }) {
                   )}
 
                   {/* Message content based on type (file or text) */}
-                  { (msg.message_type ?? msg.type) === "file" && fileUrl ? (
+                  {(msg.message_type ?? msg.type) === "file" && fileUrl ? (
                     isImageFile(fileUrl) ? (
                       <img
                         src={`${urlHelper.getBaseUrl()}${fileUrl}`}
@@ -568,6 +602,16 @@ const ChatMain = function ({ setIsSidebarOpen }) {
             );
           })}
         {/* Empty div for auto-scrolling to the bottom */}
+        {showScrollToBottomButton && (
+          <div className="fixed bottom-20 right-4 z-20">
+            <button
+              className="bg-gray-800 text-gray-400 p-2 rounded-lg shadow-md border-2 border-gray-400 hover:scale-105"
+              onClick={handleScrollToBottom}
+            >
+              <ArrowBigDown className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        )}
         <div ref={lastMessageRef} className="h-0"></div>
       </div>
 

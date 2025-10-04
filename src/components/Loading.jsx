@@ -2,16 +2,16 @@ import React from 'react';
 
 // The main App component containing the complete loading screen.
 // This is a self-contained, single-file component for easy use.
-const LoadingScreen = () => {
+const Loading = () => {
   return (
-    // Main container for the loading screen. It's a contained element that takes up the size of its parent.
+    // Main container for the loading screen. It's a fixed element that covers the entire viewport.
     // We use a custom radial gradient for the background to create a deep, modern feel.
-    // The classes below ensure the content is centered within its own space.
-    <div className="flex justify-center items-start text-white
-                    bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-black rounded-lg p-10">
+    // The classes below ensure it's centered, full-screen, and on top of all other content.
+    <div className="min-h-screen flex items-center justify-center fixed inset-0 z-50 text-white
+                    bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 to-black">
 
       {/* Container for the spinner and text, centered within the loading screen. */}
-      <div className="flex flex-col items-center space-y-6 pt-20">
+      <div className="flex flex-col items-center space-y-6">
 
         {/* The main spinner element. It is a rotating border that creates a sense of motion. */}
         <div className="relative w-24 h-24">
@@ -27,11 +27,11 @@ const LoadingScreen = () => {
         
         {/* The loading text. A simple message with a gentle pulsating animation. */}
         <div className="text-2xl font-semibold text-gray-300 animate-pulse">
-          Getting your messages...
+          Loading...
         </div>
       </div>
     </div>
   );
 };
 
-export default LoadingScreen;
+export default Loading;

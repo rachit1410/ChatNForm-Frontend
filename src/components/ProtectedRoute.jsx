@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import { fetchUser } from "../features/auth/authUtils";
 import { setLoadState, setError } from "../features/auth/authSlice";
+import Loading from "./Loading";
 
 const ProtectedRoute = function ({ children }) {
   const dispatch = useDispatch();
@@ -11,7 +12,9 @@ const ProtectedRoute = function ({ children }) {
   useEffect(() => {
     dispatch(setLoadState(false));
     dispatch(setError(null));
+    dispatch(fetchUser());
   }, [dispatch]);
+
   const { user, isAuthenticated, loading, accessExpiry, error } = useSelector(
     (state) => state.auth
   );
@@ -74,7 +77,7 @@ const ProtectedRoute = function ({ children }) {
   };
 
   useEffect(() => {
-    if (accessExpiry && !user && !loading && !error) {
+    if (accessExpiry && !user && !loading && isAuthenticated) {
       dispatch(fetchUser());
     }
   }, [accessExpiry, user, loading, error, isAuthenticated, dispatch]);
@@ -102,10 +105,7 @@ const ProtectedRoute = function ({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[url('/bg-dark.svg')] text-gray-700">
-        <div className="text-xl font-semibold">Loading...</div>
-        {/* Or a proper spinner component */}
-      </div>
+      <Loading/>
     );
   }
 
